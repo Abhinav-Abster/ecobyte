@@ -26,7 +26,7 @@ EcoByte gamifies and simplifies the process of digital sustainability:
 - **Manual Data Entry:** The current model assumes users will proactively and manually log their daily digital activities.
 - **Grid Carbon Intensity:** A generalized global average for carbon intensity is assumed for digital energy use, rather than localized energy grid data based on the user's exact geolocation.
 
-## 🚀 Getting Started
+<!-- ## 🚀 Getting Started
 
 First, install dependencies and run the development server:
 
@@ -35,4 +35,4 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result. -->
