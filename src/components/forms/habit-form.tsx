@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -56,38 +56,34 @@ export function HabitForm() {
   const [emails, setEmails] = useState({ sentPerDay: 15 });
   const [devices, setDevices] = useState({ laptopHours: 6, desktopHours: 0, smartphoneHours: 4 });
 
-  // Client-side real-time calculation in kg CO2 per month
-  const [estimatedEmissions, setEstimatedEmissions] = useState<Record<string, number>>({});
+  // Client-side real-time calculation in kg CO2 per month (derived state)
+  const streamVal = (streaming.hoursPerDay * (EMISSION_FACTORS.streaming as any)[streaming.quality] * 30) / 1000;
+  const gameVal = (gaming.hoursPerDay * (EMISSION_FACTORS.gaming as any)[gaming.platform] * 30) / 1000;
 
-  useEffect(() => {
-    const streamVal = (streaming.hoursPerDay * (EMISSION_FACTORS.streaming as any)[streaming.quality] * 30) / 1000;
-    const gameVal = (gaming.hoursPerDay * (EMISSION_FACTORS.gaming as any)[gaming.platform] * 30) / 1000;
+  const promptVal = aiUsage.promptsPerDay * EMISSION_FACTORS.ai.textPrompt * 30;
+  const imgVal = aiUsage.imageGensPerDay * EMISSION_FACTORS.ai.imageGeneration * 30;
+  const aiCodeVal = aiUsage.codingHours * EMISSION_FACTORS.ai.codingAssistant * 30;
+  const aiVal = (promptVal + imgVal + aiCodeVal) / 1000;
 
-    const promptVal = aiUsage.promptsPerDay * EMISSION_FACTORS.ai.textPrompt * 30;
-    const imgVal = aiUsage.imageGensPerDay * EMISSION_FACTORS.ai.imageGeneration * 30;
-    const aiCodeVal = aiUsage.codingHours * EMISSION_FACTORS.ai.codingAssistant * 30;
-    const aiVal = (promptVal + imgVal + aiCodeVal) / 1000;
+  const cloudVal = (cloudStorage.storageGB * EMISSION_FACTORS.cloudStorage) / 1000;
+  const videoVal = (videoMeetings.hoursPerWeek * 4.33 * EMISSION_FACTORS.videoMeetings) / 1000;
+  const emailVal = (emails.sentPerDay * EMISSION_FACTORS.emails * 30) / 1000;
 
-    const cloudVal = (cloudStorage.storageGB * EMISSION_FACTORS.cloudStorage) / 1000;
-    const videoVal = (videoMeetings.hoursPerWeek * 4.33 * EMISSION_FACTORS.videoMeetings) / 1000;
-    const emailVal = (emails.sentPerDay * EMISSION_FACTORS.emails * 30) / 1000;
+  const lapVal = devices.laptopHours * EMISSION_FACTORS.devices.laptop * 30;
+  const deskVal = devices.desktopHours * EMISSION_FACTORS.devices.desktop * 30;
+  const smartVal = devices.smartphoneHours * EMISSION_FACTORS.devices.smartphone * 30;
+  const devVal = (lapVal + deskVal + smartVal) / 1000;
 
-    const lapVal = devices.laptopHours * EMISSION_FACTORS.devices.laptop * 30;
-    const deskVal = devices.desktopHours * EMISSION_FACTORS.devices.desktop * 30;
-    const smartVal = devices.smartphoneHours * EMISSION_FACTORS.devices.smartphone * 30;
-    const devVal = (lapVal + deskVal + smartVal) / 1000;
-
-    setEstimatedEmissions({
-      streaming: Math.round(streamVal * 100) / 100,
-      gaming: Math.round(gameVal * 100) / 100,
-      aiUsage: Math.round(aiVal * 100) / 100,
-      cloudStorage: Math.round(cloudVal * 100) / 100,
-      videoMeetings: Math.round(videoVal * 100) / 100,
-      emails: Math.round(emailVal * 100) / 100,
-      devices: Math.round(devVal * 100) / 100,
-      total: Math.round((streamVal + gameVal + aiVal + cloudVal + videoVal + emailVal + devVal) * 100) / 100,
-    });
-  }, [streaming, gaming, aiUsage, cloudStorage, videoMeetings, emails, devices]);
+  const estimatedEmissions = {
+    streaming: Math.round(streamVal * 100) / 100,
+    gaming: Math.round(gameVal * 100) / 100,
+    aiUsage: Math.round(aiVal * 100) / 100,
+    cloudStorage: Math.round(cloudVal * 100) / 100,
+    videoMeetings: Math.round(videoVal * 100) / 100,
+    emails: Math.round(emailVal * 100) / 100,
+    devices: Math.round(devVal * 100) / 100,
+    total: Math.round((streamVal + gameVal + aiVal + cloudVal + videoVal + emailVal + devVal) * 100) / 100,
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

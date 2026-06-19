@@ -32,6 +32,9 @@ const ChallengeSchema = new Schema<IChallenge>(
   { timestamps: true }
 );
 
+// Index for optimizing user daily challenge retrieval
+ChallengeSchema.index({ userId: 1, assignedDate: 1 });
+
 const Challenge: Model<IChallenge> =
   mongoose.models.Challenge || mongoose.model<IChallenge>("Challenge", ChallengeSchema);
 export default Challenge;

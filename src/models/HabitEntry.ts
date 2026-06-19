@@ -70,6 +70,9 @@ const HabitEntrySchema = new Schema<IHabitEntry>(
   { timestamps: true }
 );
 
+// Index for optimizing user habit logs retrieval and sorting by date
+HabitEntrySchema.index({ userId: 1, date: -1 });
+
 const HabitEntry: Model<IHabitEntry> =
   mongoose.models.HabitEntry || mongoose.model<IHabitEntry>("HabitEntry", HabitEntrySchema);
 export default HabitEntry;

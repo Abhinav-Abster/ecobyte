@@ -58,6 +58,9 @@ const CarbonReportSchema = new Schema<ICarbonReport>(
   { timestamps: true }
 );
 
+// Index for optimizing user report retrieval and sorting by date
+CarbonReportSchema.index({ userId: 1, date: -1 });
+
 const CarbonReport: Model<ICarbonReport> =
   mongoose.models.CarbonReport || mongoose.model<ICarbonReport>("CarbonReport", CarbonReportSchema);
 export default CarbonReport;
