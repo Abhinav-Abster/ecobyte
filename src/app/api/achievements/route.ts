@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@/../auth";
 import { connectDB } from "@/lib/mongodb";
 import Achievement from "@/models/Achievement";
@@ -7,15 +7,15 @@ import { ACHIEVEMENT_DEFINITIONS } from "@/lib/achievements-data";
 export async function GET() {
   try {
     const session = await auth();
-    if (!session || !session.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     await connectDB();
 
-    const userAchievements = await Achievement.find({ userId: session.user.id });
+    const userAchievements = await Achievement.find({ userId: session.user.id }).lean();
 
-    // Map existing achievements by achievementId
+    // Map existing achievements by achievementId for O(1) lookup
     const userAchievementsMap = new Map(
       userAchievements.map((a) => [a.achievementId, a])
     );
@@ -36,7 +36,7 @@ export async function GET() {
     });
 
     return NextResponse.json({ success: true, data: mergedAchievements });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("GET achievements error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

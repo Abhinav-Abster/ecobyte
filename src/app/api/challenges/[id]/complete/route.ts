@@ -3,43 +3,7 @@ import { auth } from "@/../auth";
 import { connectDB } from "@/lib/mongodb";
 import Challenge from "@/models/Challenge";
 import User from "@/models/User";
-import Achievement from "@/models/Achievement";
-import { ACHIEVEMENT_DEFINITIONS } from "@/lib/achievements-data";
-
-async function updateAchievementProgress(userId: string, id: string, increment: number, forceValue?: number) {
-  const definition = ACHIEVEMENT_DEFINITIONS.find((a) => a.id === id);
-  if (!definition) return;
-
-  const achievement = await Achievement.findOne({ userId, achievementId: id });
-
-  if (!achievement) {
-    const progress = forceValue !== undefined ? forceValue : increment;
-    const unlockedAt = progress >= definition.target ? new Date() : undefined;
-    await Achievement.create({
-      userId,
-      achievementId: id,
-      title: definition.title,
-      description: definition.description,
-      icon: definition.icon,
-      progress,
-      target: definition.target,
-      unlockedAt,
-    });
-  } else if (!achievement.unlockedAt) {
-    if (forceValue !== undefined) {
-      achievement.progress = forceValue;
-    } else {
-      achievement.progress += increment;
-    }
-
-    if (achievement.progress >= achievement.target) {
-      achievement.progress = achievement.target;
-      achievement.unlockedAt = new Date();
-    }
-
-    await achievement.save();
-  }
-}
+import { updateAchievementProgress } from "@/lib/achievement-helpers";
 
 export async function POST(
   req: NextRequest,
@@ -47,7 +11,7 @@ export async function POST(
 ) {
   try {
     const session = await auth();
-    if (!session || !session.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -78,7 +42,7 @@ export async function POST(
     }
 
     // Check if user already completed another challenge today
-    const otherCompletedToday = await Challenge.findOne({
+    const otherCompletedToday = await Challenge.exists({
       userId: session.user.id,
       isCompleted: true,
       assignedDate: challenge.assignedDate,
@@ -90,18 +54,13 @@ export async function POST(
       const yesterdayStart = new Date(challenge.assignedDate);
       yesterdayStart.setUTCDate(yesterdayStart.getUTCDate() - 1);
 
-      const completedYesterday = await Challenge.findOne({
+      const completedYesterday = await Challenge.exists({
         userId: session.user.id,
         isCompleted: true,
         assignedDate: yesterdayStart,
       });
 
-      if (completedYesterday) {
-        user.streak += 1;
-      } else {
-        // If they had no challenges completed yesterday, streak starts at 1
-        user.streak = 1;
-      }
+      user.streak = completedYesterday ? user.streak + 1 : 1;
     }
 
     // Award XP
@@ -109,46 +68,45 @@ export async function POST(
     user.lastActiveDate = new Date();
     await user.save();
 
-    // Check achievement progress
-    // 1. Streak 7
-    await updateAchievementProgress(session.user.id, "streak_7", 1, user.streak);
+    // Update achievements concurrently
+    const [totalCompleted, categoryCount] = await Promise.all([
+      Challenge.countDocuments({ userId: session.user.id, isCompleted: true }),
+      Challenge.countDocuments({
+        userId: session.user.id,
+        isCompleted: true,
+        category: challenge.category,
+      }),
+    ]);
 
-    // 2. Challenge Master (25 total completed challenges)
-    const totalCompleted = await Challenge.countDocuments({
-      userId: session.user.id,
-      isCompleted: true,
-    });
-    await updateAchievementProgress(session.user.id, "challenge_master", 1, totalCompleted);
+    const achievementUpdates: Promise<void>[] = [
+      updateAchievementProgress(session.user.id, "streak_7", 1, user.streak),
+      updateAchievementProgress(session.user.id, "challenge_master", 1, totalCompleted),
+      updateAchievementProgress(session.user.id, "xp_500", 1, user.xp),
+    ];
 
-    // 3. XP Hunter (500 total XP)
-    await updateAchievementProgress(session.user.id, "xp_500", 1, user.xp);
-
-    // 4. Category specific challenges completed
-    const categoryCount = await Challenge.countDocuments({
-      userId: session.user.id,
-      isCompleted: true,
-      category: challenge.category,
-    });
-
-    if (challenge.category === "cloud") {
-      await updateAchievementProgress(session.user.id, "cloud_cleaner", 1, categoryCount);
-    } else if (challenge.category === "streaming") {
-      await updateAchievementProgress(session.user.id, "streaming_saver", 1, categoryCount);
-    } else if (challenge.category === "ai") {
-      await updateAchievementProgress(session.user.id, "ai_mindful", 1, categoryCount);
+    // Category-specific achievements
+    const categoryAchievementMap: Record<string, string> = {
+      cloud: "cloud_cleaner",
+      streaming: "streaming_saver",
+      ai: "ai_mindful",
+    };
+    const achievementId = categoryAchievementMap[challenge.category];
+    if (achievementId) {
+      achievementUpdates.push(
+        updateAchievementProgress(session.user.id, achievementId, 1, categoryCount)
+      );
     }
+
+    await Promise.all(achievementUpdates);
 
     return NextResponse.json({
       success: true,
       data: {
         challenge,
-        user: {
-          xp: user.xp,
-          streak: user.streak,
-        },
+        user: { xp: user.xp, streak: user.streak },
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Complete challenge error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

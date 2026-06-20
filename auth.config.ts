@@ -1,3 +1,4 @@
+import Google from "next-auth/providers/google";
 import type { NextAuthConfig } from "next-auth";
 
 export const authConfig = {
@@ -9,19 +10,24 @@ export const authConfig = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.role = (user as any).role || "user";
+        token.id = user.id!;
+        token.role = user.role ?? "user";
       }
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.id as string;
-        (session.user as any).role = token.role as string;
+        session.user.id = token.id;
+        session.user.role = token.role;
       }
       return session;
     },
   },
-  providers: [], // Placeholder, overridden in auth.ts
+  providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+  ],
   secret: process.env.AUTH_SECRET,
 } satisfies NextAuthConfig;

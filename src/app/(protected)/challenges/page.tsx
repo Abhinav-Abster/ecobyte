@@ -7,10 +7,11 @@ import { ChallengeCard } from "@/components/challenges/challenge-card";
 import { LoadingSkeletonGrid } from "@/components/shared/loading-skeleton";
 import { toast } from "sonner";
 import { AnimatedCard } from "@/components/shared/animated-card";
+import type { ChallengeData } from "@/types";
 
 export default function ChallengesPage() {
   const [loading, setLoading] = useState(true);
-  const [challenges, setChallenges] = useState<any[]>([]);
+  const [challenges, setChallenges] = useState<ChallengeData[]>([]);
   const [streak, setStreak] = useState(0);
   const [xp, setXp] = useState(0);
 

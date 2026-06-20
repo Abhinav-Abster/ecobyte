@@ -15,7 +15,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { EMISSION_FACTORS } from "@/lib/emission-factors";
+import type { StreamingQuality, GamingPlatform } from "@/types";
 
 const getSingleValue = (val: number | readonly number[]): number => {
   return typeof val === "number" ? val : val[0];
@@ -48,8 +49,14 @@ export function HabitForm() {
   };
 
   // Form states
-  const [streaming, setStreaming] = useState({ hoursPerDay: 2, quality: "1080p" as any });
-  const [gaming, setGaming] = useState({ hoursPerDay: 1, platform: "pc" as any });
+  const [streaming, setStreaming] = useState<{ hoursPerDay: number; quality: StreamingQuality }>({
+    hoursPerDay: 2,
+    quality: "1080p",
+  });
+  const [gaming, setGaming] = useState<{ hoursPerDay: number; platform: GamingPlatform }>({
+    hoursPerDay: 1,
+    platform: "pc",
+  });
   const [aiUsage, setAiUsage] = useState({ promptsPerDay: 10, imageGensPerDay: 2, codingHours: 1 });
   const [cloudStorage, setCloudStorage] = useState({ storageGB: 50 });
   const [videoMeetings, setVideoMeetings] = useState({ hoursPerWeek: 10 });
@@ -57,8 +64,8 @@ export function HabitForm() {
   const [devices, setDevices] = useState({ laptopHours: 6, desktopHours: 0, smartphoneHours: 4 });
 
   // Client-side real-time calculation in kg CO2 per month (derived state)
-  const streamVal = (streaming.hoursPerDay * (EMISSION_FACTORS.streaming as any)[streaming.quality] * 30) / 1000;
-  const gameVal = (gaming.hoursPerDay * (EMISSION_FACTORS.gaming as any)[gaming.platform] * 30) / 1000;
+  const streamVal = (streaming.hoursPerDay * EMISSION_FACTORS.streaming[streaming.quality] * 30) / 1000;
+  const gameVal = (gaming.hoursPerDay * EMISSION_FACTORS.gaming[gaming.platform] * 30) / 1000;
 
   const promptVal = aiUsage.promptsPerDay * EMISSION_FACTORS.ai.textPrompt * 30;
   const imgVal = aiUsage.imageGensPerDay * EMISSION_FACTORS.ai.imageGeneration * 30;
@@ -125,9 +132,10 @@ export function HabitForm() {
       toast.success("Habits logged and carbon footprint calculated!");
       router.push("/dashboard");
       router.refresh();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err.message || "Error submitting habits");
+      const message = err instanceof Error ? err.message : "Error submitting habits";
+      toast.error(message);
       setSubmitting(false);
     }
   };
@@ -200,7 +208,7 @@ export function HabitForm() {
                   <Label htmlFor="streaming-quality" className="text-sm font-semibold">Default Resolution</Label>
                   <Select
                     value={streaming.quality}
-                    onValueChange={(val) => setStreaming((prev) => ({ ...prev, quality: val }))}
+                    onValueChange={(val) => setStreaming((prev) => ({ ...prev, quality: val as StreamingQuality }))}
                   >
                     <SelectTrigger id="streaming-quality" className="border-border/60 bg-background/50">
                       <SelectValue placeholder="Select quality" />
@@ -270,7 +278,7 @@ export function HabitForm() {
                   <Label htmlFor="gaming-platform" className="text-sm font-semibold">Platform</Label>
                   <Select
                     value={gaming.platform}
-                    onValueChange={(val) => setGaming((prev) => ({ ...prev, platform: val }))}
+                    onValueChange={(val) => setGaming((prev) => ({ ...prev, platform: val as GamingPlatform }))}
                   >
                     <SelectTrigger id="gaming-platform" className="border-border/60 bg-background/50">
                       <SelectValue placeholder="Select platform" />

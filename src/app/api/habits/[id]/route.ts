@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/../auth";
 import { connectDB } from "@/lib/mongodb";
 import HabitEntry from "@/models/HabitEntry";
+import { habitEntrySchema } from "@/lib/validations";
+import { parseAndValidate } from "@/lib/request-utils";
+
+const updateHabitSchema = habitEntrySchema.partial();
 
 export async function GET(
   req: NextRequest,
@@ -9,14 +13,14 @@ export async function GET(
 ) {
   try {
     const session = await auth();
-    if (!session || !session.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
     await connectDB();
 
-    const habit = await HabitEntry.findById(id);
+    const habit = await HabitEntry.findById(id).lean();
     if (!habit) {
       return NextResponse.json({ error: "Habit entry not found" }, { status: 404 });
     }
@@ -26,7 +30,7 @@ export async function GET(
     }
 
     return NextResponse.json({ success: true, data: habit });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("GET habit error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
@@ -38,7 +42,7 @@ export async function PUT(
 ) {
   try {
     const session = await auth();
-    if (!session || !session.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -54,7 +58,12 @@ export async function PUT(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const body = await req.json();
+    const validation = await parseAndValidate(req, updateHabitSchema);
+    if (!validation.success) {
+      return validation.response;
+    }
+
+    const body = validation.data;
 
     habit.streaming = body.streaming ?? habit.streaming;
     habit.gaming = body.gaming ?? habit.gaming;
@@ -70,7 +79,7 @@ export async function PUT(
     await habit.save();
 
     return NextResponse.json({ success: true, data: habit });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("PUT habit error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
@@ -82,14 +91,14 @@ export async function DELETE(
 ) {
   try {
     const session = await auth();
-    if (!session || !session.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
     await connectDB();
 
-    const habit = await HabitEntry.findById(id);
+    const habit = await HabitEntry.findById(id).lean();
     if (!habit) {
       return NextResponse.json({ error: "Habit entry not found" }, { status: 404 });
     }
@@ -101,7 +110,7 @@ export async function DELETE(
     await HabitEntry.findByIdAndDelete(id);
 
     return NextResponse.json({ success: true, message: "Habit entry deleted successfully" });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("DELETE habit error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

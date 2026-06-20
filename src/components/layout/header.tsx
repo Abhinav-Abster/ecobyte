@@ -46,7 +46,7 @@ export function Header() {
   };
 
   const user = session?.user;
-  const isAdmin = (user as any)?.role === "admin";
+  const isAdmin = user?.role === "admin";
 
   return (
     <header className="sticky top-0 z-10 w-full h-16 border-b border-border bg-card/65 backdrop-blur-md flex items-center justify-between px-6">

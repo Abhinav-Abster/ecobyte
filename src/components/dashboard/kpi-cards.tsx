@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Leaf, Calendar, ArrowRight, Gauge, Activity } from "lucide-react";
+import { Leaf, Calendar, Gauge, Activity } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "motion/react";
 import { KPIData } from "@/types";
@@ -68,7 +68,7 @@ export function KPICards({ data }: KPICardsProps) {
       animate="show"
       className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
     >
-      {kpis.map((kpi, index) => {
+      {kpis.map((kpi) => {
         const Icon = kpi.icon;
         return (
           <motion.div key={kpi.title} variants={item}>

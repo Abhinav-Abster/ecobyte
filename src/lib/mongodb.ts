@@ -14,14 +14,13 @@ if (!MONGODB_URI) {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var mongoose: {
     conn: typeof import("mongoose") | null;
     promise: Promise<typeof import("mongoose")> | null;
   };
 }
 
-let cached = global.mongoose || { conn: null, promise: null };
+const cached = global.mongoose || { conn: null, promise: null };
 
 if (!global.mongoose) {
   global.mongoose = cached;

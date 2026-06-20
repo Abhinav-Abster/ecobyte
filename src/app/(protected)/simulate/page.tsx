@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
 import { AlertCircle, Calendar, LineChart, Leaf, TrendingDown, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import type { SimulationResult } from "@/types";
 
 export default function SimulatePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [simulation, setSimulation] = useState<any>(null);
+  const [simulation, setSimulation] = useState<SimulationResult | null>(null);
   const [selectedMonths, setSelectedMonths] = useState<number | null>(null);
 
   const runSimulation = async (months: number) => {

@@ -16,10 +16,28 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { CATEGORY_CONFIG } from "@/lib/emission-factors";
+import type { KPIData, CarbonReportDocument } from "@/types";
+
+interface DashboardDataWithReports {
+  hasReports: true;
+  latestReport: CarbonReportDocument;
+  kpiData: KPIData;
+  pieData: { name: string; value: number; color: string }[];
+  trendData: { label: string; value: number }[];
+  weeklyData: { label: string; value: number }[];
+  streak: number;
+  xp: number;
+}
+
+type DashboardData = { hasReports: false } | DashboardDataWithReports;
+
+const isCategoryKey = (key: string): key is keyof typeof CATEGORY_CONFIG => {
+  return key in CATEGORY_CONFIG;
+};
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<DashboardData | null>(null);
 
   useEffect(() => {
     async function fetchDashboardData() {
@@ -41,9 +59,9 @@ export default function DashboardPage() {
             return;
           }
 
-          const latestReport = reports[0];
+          const latestReport = reports[0] as CarbonReportDocument;
 
-          const totalFootprint = reports.reduce((acc: number, r: any) => acc + r.emissions.total, 0);
+          const totalFootprint = reports.reduce((acc: number, r: CarbonReportDocument) => acc + r.emissions.total, 0);
           const monthlyFootprint = latestReport.emissions.total;
           const weeklyFootprint = monthlyFootprint / 4.33;
 
@@ -58,7 +76,7 @@ export default function DashboardPage() {
           const pieData = Object.entries(latestReport.emissions)
             .filter(([key]) => key !== "total" && key !== "$init" && key !== "_id")
             .map(([key, value]) => {
-              const config = (CATEGORY_CONFIG as any)[key] || { label: key, color: "#888888" };
+              const config = isCategoryKey(key) ? CATEGORY_CONFIG[key] : { label: key, color: "#888888" };
               return {
                 name: config.label,
                 value: typeof value === "number" ? value : 0,
@@ -69,7 +87,7 @@ export default function DashboardPage() {
           const trendData = [...reports]
             .reverse()
             .slice(-6)
-            .map((r: any) => ({
+            .map((r: CarbonReportDocument) => ({
               label: new Date(r.date).toLocaleDateString("en-US", { month: "short", year: "2-digit" }),
               value: r.emissions.total,
             }));
@@ -115,7 +133,9 @@ export default function DashboardPage() {
     );
   }
 
-  if (data && !data.hasReports) {
+  if (!data) return null;
+
+  if (!data.hasReports) {
     return (
       <div className="space-y-6">
         <PageHeader title="Dashboard" description="Overview of your digital carbon footprint and green progress" />

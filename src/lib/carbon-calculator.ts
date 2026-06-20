@@ -3,7 +3,7 @@
 // Modular service that computes emissions from digital habits
 // =============================================================================
 
-import { EMISSION_FACTORS, SCORE_THRESHOLDS } from "./emission-factors";
+import { EMISSION_FACTORS } from "./emission-factors";
 import type {
   HabitEntryData,
   EmissionsBreakdown,

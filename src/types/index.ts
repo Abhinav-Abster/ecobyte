@@ -87,6 +87,15 @@ export interface CarbonReportData {
   scoreCategory: ScoreCategory;
 }
 
+export interface CarbonReportDocument extends CarbonReportData {
+  _id: string;
+  userId: string;
+  date: string | Date;
+  period: ReportPeriod;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ---- Emission Factors Types ----
 
 export interface EmissionFactors {

@@ -8,7 +8,7 @@ import { getRecommendations } from "@/lib/gemini";
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    if (!session || !session.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -20,12 +20,16 @@ export async function POST(req: NextRequest) {
     let report = null;
 
     if (habitEntryId) {
-      habitEntry = await HabitEntry.findById(habitEntryId);
-      report = await CarbonReport.findOne({ habitEntryId });
+      [habitEntry, report] = await Promise.all([
+        HabitEntry.findById(habitEntryId).lean(),
+        CarbonReport.findOne({ habitEntryId }).lean(),
+      ]);
     } else {
-      report = await CarbonReport.findOne({ userId: session.user.id }).sort({ date: -1 });
+      report = await CarbonReport.findOne({ userId: session.user.id })
+        .sort({ date: -1 })
+        .lean();
       if (report) {
-        habitEntry = await HabitEntry.findById(report.habitEntryId);
+        habitEntry = await HabitEntry.findById(report.habitEntryId).lean();
       }
     }
 
@@ -39,7 +43,7 @@ export async function POST(req: NextRequest) {
     const recommendations = await getRecommendations(habitEntry, report.emissions);
 
     return NextResponse.json({ success: true, data: recommendations });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("AI recommendations API error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

@@ -9,42 +9,73 @@ import { Button } from "@/components/ui/button";
 import { Users, FileText, Settings2, ShieldCheck, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { LoadingSkeletonDashboard } from "@/components/shared/loading-skeleton";
+import type { AdminStats, EmissionFactors } from "@/types";
+
+interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  image?: string;
+  role: string;
+  xp: number;
+  streak: number;
+  lastActiveDate?: string | Date;
+  createdAt: string | Date;
+  carbonScore: number | null;
+  scoreCategory: string | null;
+}
+
+interface PaginatedUsers {
+  users: AdminUser[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+interface FactorRow {
+  category: string;
+  detail: string;
+  factor: string;
+}
 
 export default function AdminPage() {
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
-  const [usersData, setUsersData] = useState<any>(null);
-  const [factors, setFactors] = useState<any>(null);
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [usersData, setUsersData] = useState<PaginatedUsers | null>(null);
+  const [factors, setFactors] = useState<EmissionFactors | null>(null);
   const [page, setPage] = useState(1);
 
-  const fetchAdminData = async () => {
-    try {
-      const [statsRes, usersRes, factorsRes] = await Promise.all([
-        fetch("/api/admin/stats"),
-        fetch(`/api/admin/users?page=${page}&limit=10`),
-        fetch("/api/admin/emission-factors"),
-      ]);
-
-      const statsJson = await statsRes.json();
-      const usersJson = await usersRes.json();
-      const factorsJson = await factorsRes.json();
-
-      if (statsJson.success && usersJson.success && factorsJson.success) {
-        setStats(statsJson.data);
-        setUsersData(usersJson.data);
-        setFactors(factorsJson.data);
-      } else {
-        toast.error("Failed to load admin data");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Error fetching admin statistics");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchAdminData = async () => {
+      try {
+        const [statsRes, usersRes, factorsRes] = await Promise.all([
+          fetch("/api/admin/stats"),
+          fetch(`/api/admin/users?page=${page}&limit=10`),
+          fetch("/api/admin/emission-factors"),
+        ]);
+
+        const statsJson = await statsRes.json();
+        const usersJson = await usersRes.json();
+        const factorsJson = await factorsRes.json();
+
+        if (statsJson.success && usersJson.success && factorsJson.success) {
+          setStats(statsJson.data);
+          setUsersData(usersJson.data);
+          setFactors(factorsJson.data);
+        } else {
+          toast.error("Failed to load admin data");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Error fetching admin statistics");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchAdminData();
   }, [page]);
 
@@ -57,9 +88,9 @@ export default function AdminPage() {
     );
   }
 
-  const factorRows: any[] = [];
+  const factorRows: FactorRow[] = [];
   if (factors) {
-    Object.entries(factors).forEach(([category, value]: [string, any]) => {
+    Object.entries(factors).forEach(([category, value]) => {
       if (typeof value === "object") {
         Object.entries(value).forEach(([subKey, subVal]) => {
           factorRows.push({
@@ -161,7 +192,7 @@ export default function AdminPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {usersData?.users.map((u: any) => (
+                  {usersData?.users.map((u: AdminUser) => (
                     <TableRow key={u.id} className="border-border hover:bg-muted/10">
                       <TableCell>
                         <div>

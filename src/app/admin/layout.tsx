@@ -6,7 +6,7 @@ import { Header } from "@/components/layout/header";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
-  const role = (session?.user as any)?.role;
+  const role = session?.user?.role;
 
   if (!session || role !== "admin") {
     redirect("/dashboard");

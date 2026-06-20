@@ -3,24 +3,27 @@ import { auth } from "@/../auth";
 import { connectDB } from "@/lib/mongodb";
 import CarbonReport from "@/models/CarbonReport";
 import { simulateFutureImpact } from "@/lib/gemini";
+import { simulationSchema } from "@/lib/validations";
+import { parseAndValidate } from "@/lib/request-utils";
 
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    if (!session || !session.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await connectDB();
-
-    const body = await req.json().catch(() => ({}));
-    const months = body.months || 6;
-
-    if (months !== 6 && months !== 12) {
-      return NextResponse.json({ error: "Months must be 6 or 12" }, { status: 400 });
+    const validation = await parseAndValidate(req, simulationSchema);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    const report = await CarbonReport.findOne({ userId: session.user.id }).sort({ date: -1 });
+    const { months } = validation.data;
+    await connectDB();
+
+    const report = await CarbonReport.findOne({ userId: session.user.id })
+      .sort({ date: -1 })
+      .lean();
     if (!report) {
       return NextResponse.json(
         { error: "No carbon reports found. Please track your habits first." },
@@ -31,7 +34,7 @@ export async function POST(req: NextRequest) {
     const simulation = await simulateFutureImpact(report.emissions, months);
 
     return NextResponse.json({ success: true, data: simulation });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("AI simulation API error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

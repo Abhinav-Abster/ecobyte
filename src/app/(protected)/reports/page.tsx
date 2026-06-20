@@ -5,7 +5,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { BreakdownTable } from "@/components/dashboard/breakdown-table";
 import { LoadingSkeletonGrid } from "@/components/shared/loading-skeleton";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,7 +15,6 @@ import {
   ChevronUp,
   ArrowUpRight,
   ArrowDownRight,
-  TrendingDown,
   FileSpreadsheet,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -23,10 +22,11 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { SCORE_BADGES } from "@/lib/constants";
 import { AnimatedCard } from "@/components/shared/animated-card";
+import type { CarbonReportDocument } from "@/types";
 
 export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
-  const [reports, setReports] = useState<any[]>([]);
+  const [reports, setReports] = useState<CarbonReportDocument[]>([]);
   const [expandedReportId, setExpandedReportId] = useState<string | null>(null);
 
   const fetchReports = async () => {

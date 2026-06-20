@@ -9,10 +9,8 @@ import {
   Bot,
   TrendingDown,
   Target,
-  Trophy,
   FileBarChart,
   Globe,
-  Zap,
   Leaf,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";

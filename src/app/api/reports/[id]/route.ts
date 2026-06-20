@@ -9,14 +9,14 @@ export async function GET(
 ) {
   try {
     const session = await auth();
-    if (!session || !session.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
     await connectDB();
 
-    const report = await CarbonReport.findById(id);
+    const report = await CarbonReport.findById(id).lean();
     if (!report) {
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
     }
@@ -26,7 +26,7 @@ export async function GET(
     }
 
     return NextResponse.json({ success: true, data: report });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("GET report error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
@@ -38,14 +38,14 @@ export async function DELETE(
 ) {
   try {
     const session = await auth();
-    if (!session || !session.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
     await connectDB();
 
-    const report = await CarbonReport.findById(id);
+    const report = await CarbonReport.findById(id).lean();
     if (!report) {
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
     }
@@ -57,7 +57,7 @@ export async function DELETE(
     await CarbonReport.findByIdAndDelete(id);
 
     return NextResponse.json({ success: true, message: "Report deleted successfully" });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("DELETE report error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

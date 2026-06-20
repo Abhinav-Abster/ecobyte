@@ -9,11 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Sparkles, RefreshCw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import type { AICoachResponse } from "@/types";
 
 export default function CoachPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<AICoachResponse | null>(null);
 
   const fetchRecommendations = async (showToast = false) => {
     setLoading(true);

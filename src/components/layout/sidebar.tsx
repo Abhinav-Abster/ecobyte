@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS, ADMIN_NAV_ITEMS } from "@/lib/constants";
 import {
@@ -18,15 +18,14 @@ import {
   Shield,
   Settings,
   LogOut,
-  Menu,
   ChevronLeft,
   ChevronRight,
-  User as UserIcon,
+  LucideIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
-const iconMap: Record<string, React.ComponentType<any>> = {
+const iconMap: Record<string, LucideIcon> = {
   LayoutDashboard,
   ClipboardList,
   Bot,
@@ -43,7 +42,7 @@ export function Sidebar({ className }: { className?: string }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const user = session?.user;
-  const isAdmin = (user as any)?.role === "admin";
+  const isAdmin = user?.role === "admin";
 
   const getInitials = (name?: string | null) => {
     if (!name) return "EB";

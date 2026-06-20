@@ -56,7 +56,7 @@ export default function SettingsPage() {
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <span className="text-xl font-bold text-foreground">{user?.name || "Eco Citizen"}</span>
                 <span className="text-xs uppercase font-extrabold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 self-center sm:self-auto">
-                  {(user as any)?.role || "User"}
+                  {user?.role || "User"}
                 </span>
               </div>
               <div className="space-y-1.5 text-sm text-muted-foreground">

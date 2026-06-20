@@ -2,33 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
-import { z } from "zod";
-
-const signupSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
+import { signupSchema } from "@/lib/validations";
+import { parseAndValidate } from "@/lib/request-utils";
 
 export async function POST(req: NextRequest) {
   try {
-    await connectDB();
-
-    const body = await req.json();
-    const result = signupSchema.safeParse(body);
-
-    if (!result.success) {
-      return NextResponse.json(
-        { error: result.error.issues[0].message },
-        { status: 400 }
-      );
+    const validation = await parseAndValidate(req, signupSchema);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    const { name, email, password } = result.data;
+    const { name, email, password } = validation.data;
+    await connectDB();
     const normalizedEmail = email.toLowerCase().trim();
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email: normalizedEmail });
+    const existingUser = await User.findOne({ email: normalizedEmail }).lean();
     if (existingUser) {
       return NextResponse.json(
         { error: "User already exists with this email" },
@@ -61,7 +50,7 @@ export async function POST(req: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Signup error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },

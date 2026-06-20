@@ -68,9 +68,10 @@ export default function SignupPage() {
         router.push("/dashboard");
         router.refresh();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err.message || "An error occurred during sign up");
+      const message = err instanceof Error ? err.message : "An error occurred during sign up";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

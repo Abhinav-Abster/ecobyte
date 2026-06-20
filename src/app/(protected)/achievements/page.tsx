@@ -9,9 +9,20 @@ import { Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { AnimatedCard } from "@/components/shared/animated-card";
 
+interface Achievement {
+  achievementId: string;
+  title: string;
+  description: string;
+  icon: string;
+  target: number;
+  progress: number;
+  unlockedAt?: string | Date | null;
+  isUnlocked: boolean;
+}
+
 export default function AchievementsPage() {
   const [loading, setLoading] = useState(true);
-  const [achievements, setAchievements] = useState<any[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
 
   useEffect(() => {
     async function fetchAchievements() {

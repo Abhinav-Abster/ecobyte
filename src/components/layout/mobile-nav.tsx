@@ -4,13 +4,13 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Menu, LayoutDashboard, ClipboardList, Bot, TrendingDown, Target, Trophy, FileBarChart, Shield } from "lucide-react";
+import { Menu, LayoutDashboard, ClipboardList, Bot, TrendingDown, Target, Trophy, FileBarChart, Shield, LucideIcon } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { NAV_ITEMS, ADMIN_NAV_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
-const iconMap: Record<string, React.ComponentType<any>> = {
+const iconMap: Record<string, LucideIcon> = {
   LayoutDashboard,
   ClipboardList,
   Bot,
@@ -32,7 +32,7 @@ export function MobileNav() {
   }, [pathname]);
 
   const user = session?.user;
-  const isAdmin = (user as any)?.role === "admin";
+  const isAdmin = user?.role === "admin";
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

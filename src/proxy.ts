@@ -4,20 +4,25 @@ import { NextResponse } from "next/server";
 
 const { auth } = NextAuth(authConfig);
 
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/track",
+  "/coach",
+  "/simulate",
+  "/challenges",
+  "/achievements",
+  "/reports",
+  "/admin",
+  "/settings",
+] as const;
+
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const { nextUrl } = req;
 
-  const isProtectedRoute =
-    nextUrl.pathname.startsWith("/dashboard") ||
-    nextUrl.pathname.startsWith("/track") ||
-    nextUrl.pathname.startsWith("/coach") ||
-    nextUrl.pathname.startsWith("/simulate") ||
-    nextUrl.pathname.startsWith("/challenges") ||
-    nextUrl.pathname.startsWith("/achievements") ||
-    nextUrl.pathname.startsWith("/reports") ||
-    nextUrl.pathname.startsWith("/admin") ||
-    nextUrl.pathname.startsWith("/settings");
+  const isProtectedRoute = PROTECTED_PREFIXES.some((prefix) =>
+    nextUrl.pathname.startsWith(prefix)
+  );
 
   if (isProtectedRoute && !isLoggedIn) {
     return NextResponse.redirect(new URL("/login", nextUrl));
@@ -25,7 +30,7 @@ export default auth((req) => {
 
   // Admin route protection
   if (nextUrl.pathname.startsWith("/admin")) {
-    const userRole = (req.auth?.user as any)?.role;
+    const userRole = req.auth?.user?.role;
     if (userRole !== "admin") {
       return NextResponse.redirect(new URL("/dashboard", nextUrl));
     }

@@ -13,6 +13,19 @@ import type {
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
+const MODEL = "gemini-2.0-flash" as const;
+
+/**
+ * Safely parse a JSON string, returning null on failure instead of throwing.
+ */
+function safeJsonParse<T>(text: string): T | null {
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Generate personalized sustainability recommendations based on user habits
  */
@@ -54,7 +67,7 @@ Respond with a JSON object containing:
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -62,10 +75,14 @@ Respond with a JSON object containing:
     });
 
     const text = response.text ?? "";
-    return JSON.parse(text) as AICoachResponse;
+    const parsed = safeJsonParse<AICoachResponse>(text);
+    if (!parsed) {
+      console.warn("Gemini returned malformed JSON, using fallback recommendations");
+      return getFallbackRecommendations(emissions);
+    }
+    return parsed;
   } catch (error) {
     console.error("Gemini API error:", error);
-    // Return fallback recommendations
     return getFallbackRecommendations(emissions);
   }
 }
@@ -103,7 +120,7 @@ Make the projections realistic and gradual. The improved trajectory should show 
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -111,7 +128,12 @@ Make the projections realistic and gradual. The improved trajectory should show 
     });
 
     const text = response.text ?? "";
-    return JSON.parse(text) as SimulationResult;
+    const parsed = safeJsonParse<SimulationResult>(text);
+    if (!parsed) {
+      console.warn("Gemini returned malformed JSON, using fallback simulation");
+      return getFallbackSimulation(emissions, months);
+    }
+    return parsed;
   } catch (error) {
     console.error("Gemini simulation error:", error);
     return getFallbackSimulation(emissions, months);
@@ -179,14 +201,15 @@ function getFallbackSimulation(
   const timeline = [];
   let cumulativeCurrent = 0;
   let cumulativeImproved = 0;
+  const floor = emissions.total * 0.5;
 
   for (let i = 1; i <= months; i++) {
     // Current trajectory: slight 2% monthly increase
     const currentMonth = emissions.total * (1 + 0.02 * (i - 1));
     // Improved trajectory: 3% monthly improvement
-    const improvedMonth = emissions.total * (1 - 0.03 * i);
+    const improvedMonth = Math.max(emissions.total * (1 - 0.03 * i), floor);
     cumulativeCurrent += currentMonth;
-    cumulativeImproved += Math.max(improvedMonth, emissions.total * 0.5);
+    cumulativeImproved += improvedMonth;
 
     timeline.push({
       month: `Month ${i}`,
@@ -196,13 +219,15 @@ function getFallbackSimulation(
   }
 
   const totalSavings = cumulativeCurrent - cumulativeImproved;
+  const percentageReduction = cumulativeCurrent > 0
+    ? Math.round((totalSavings / cumulativeCurrent) * 10000) / 100
+    : 0;
 
   return {
     timeline,
     totalCurrentEmissions: Math.round(cumulativeCurrent * 100) / 100,
     totalImprovedEmissions: Math.round(cumulativeImproved * 100) / 100,
     totalSavings: Math.round(totalSavings * 100) / 100,
-    percentageReduction:
-      Math.round((totalSavings / cumulativeCurrent) * 10000) / 100,
+    percentageReduction,
   };
 }
